@@ -1,0 +1,26 @@
+{
+  "name": "docogen-fromgit",
+  "version": "0.0.1",
+  "description": "Submodule of DocoGen",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toolbuddy/docoGen-fromgit.git"
+  },
+  "keywords": [
+    "docogen",
+    "document generator"
+  ],
+  "author": "Kevin Cyu (https://kevinbird61.github.io/Intro/)",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/toolbuddy/docoGen-fromgit/issues"
+  },
+  "dependencies": {
+    "nodegit": "^0.20.3"
+  },
+  "homepage": "https://github.com/toolbuddy/docoGen-fromgit#readme"
+}
