@@ -20,7 +20,8 @@
     "url": "https://github.com/toolbuddy/docoGen-fromgit/issues"
   },
   "dependencies": {
-    "nodegit": "^0.20.3"
+    "nodegit": "^0.20.3",
+    "jsonfile": "^4.0.0"
   },
   "homepage": "https://github.com/toolbuddy/docoGen-fromgit#readme"
 }
