@@ -6,11 +6,12 @@ const nodegit = require('nodegit'),
 // Module
 const docogen_fromgit = {};
 
+var waiting; // timer
+
 // Get Commits
 function getCommits(src_path,result_f_name){
-	jsfs.writeFileSync(result_f_name+".lock",{ arr:[] },{spaces: 2});
+	var flag = -100, counter = 0, commit_history = { arr:[] };
 	return new Promise((resolve, reject) => {
-		// nodegit.Repository.open(path.resolve(__dirname, "../docoGen/.git"))
 		nodegit.Repository.open(src_path)
 		.then(function(repo) {
 			// Get total 
@@ -21,35 +22,36 @@ function getCommits(src_path,result_f_name){
 			var history = firstCommitOnMaster.history(nodegit.Revwalk.SORT.Time);
 			// History emits "commit" event for each commit in the branch's history
 			history.on("commit", function(commit) {
+				// Per commit
+				var commit_obj = {
+					commit: commit.sha(),
+					author: { name: commit.author().name(), email: commit.author().email() },
+					date: commit.date(),
+					message: commit.message(),
+					files: []
+				}
 				commit.getDiff().then(function(diffList){
 					diffList.forEach(function(diff) {
 						diff.patches().then(function(patches) {
 							patches.forEach(function(patch) {
 								patch.hunks().then(function(hunks) {
 									hunks.forEach(function(hunk) {
+										var files_obj = {
+											old: patch.oldFile().path(),
+											new: patch.newFile().path(),
+											diffnum: hunk.header().trim()
+										}
 										hunk.lines().then(function(lines) {
-											// Read File
-											const current = jsfs.readFileSync(result_f_name+".lock");
-											// Construct object
-											let cur_element = { };
-											cur_element.commit = commit.sha()
-											cur_element.author = { name: commit.author().name(), email: commit.author().email() }
-											cur_element.date = commit.date()
-											cur_element.message = commit.message()
-											cur_element.file = { old: patch.oldFile().path(), new: patch.newFile().path() }
-											cur_element.diffnum = hunk.header().trim()
-											
 											// Write detail 
 											/*lines.forEach(function(line) {
 												console.log(String.fromCharCode(line.origin()) +
 													line.content().trim());
 												cur_element.detail += String.fromCharCode(line.origin()) + line.content().trim()+"\n";
 											});*/
-
-											// push this element into array
-											current.arr.push(cur_element);
-											// write back 
-											jsfs.writeFileSync(result_f_name+".lock",current,{spaces: 2})
+											// count 1
+											commit_obj.files.push(files_obj)
+											commit_history.arr.push(commit_obj)
+											counter++;
 										});
 									});
 								});
@@ -58,13 +60,25 @@ function getCommits(src_path,result_f_name){
 					});
 				});
 			});
+
 			// Don't forget to call `start()`!
 			history.start();
 		})
 		.done( () => {
-			setTimeout(function(){
-				resolve({ msg:"Waiting...", f_name: result_f_name });
-			},1000)
+			waiting = setInterval(function(){
+				if(counter == flag){
+					resolve({ msg:"Waiting...", f_name: result_f_name });
+					console.log(`Counter: ${counter}, Flag: ${flag}`);
+					// Write into the file
+					jsfs.writeFileSync(result_f_name,commit_history,{spaces: 2});
+					// Close timer 
+					clearInterval(waiting);
+				}
+				else{
+					console.log(`Counter: ${counter}, Flag: ${flag}`);
+					flag = counter;
+				}
+			},100)
 		})
 	})
 }
@@ -75,15 +89,11 @@ docogen_fromgit.getAllInfo = function( src,fout_n ){
 		getCommits(src,fout_n)
 			.then( ({ msg,f_name }, wrong) => {
 				console.log(msg);
-				// if data has been writing into data, then rename the target files to finished state
-				fs.rename(f_name+".lock",f_name,(err) => {
-					if(err) reject("[getAllInfo] Write File Error");
-					else resolve({
-						msg: "[getAllInfo] Write File Complete!",
-						fout_n: f_name,
-						info: jsfs.readFileSync(f_name)
-					});
-				})
+				resolve({
+					msg: "[getAllInfo] Write File Complete!",
+					fout_n: f_name,
+					info: jsfs.readFileSync(f_name)
+				});
 			})
 	})
 }

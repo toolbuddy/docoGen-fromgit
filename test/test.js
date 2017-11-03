@@ -3,7 +3,7 @@ var docogen_fromgit = require('../main'),
 
 // Example of getting all information info 
 
-docogen_fromgit.getAllInfo(path.resolve(__dirname, "../.git"),"output.json")
+docogen_fromgit.getAllInfo(path.resolve(__dirname, "../../docoGen/.git"),"output.json")
     .then( (resolve,reject) =>{
         if(reject) console.log(reject);
         else{
